@@ -7,10 +7,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +36,8 @@ public class Json {
 
     private Gson gsonWithNull;
 
+    private Gson gsonLenient;
+
     public static Gson gson() {
         return get().gson==null?get().gson=new Gson():get().gson;
     }
@@ -39,6 +46,13 @@ public class Json {
         return get().gsonWithNull==null?get().gsonWithNull=new GsonBuilder()
                 .serializeNulls()
                 .create():get().gsonWithNull;
+    }
+
+    public static Gson gsonLenient() {
+        return get().gsonLenient==null?get().gsonLenient=new GsonBuilder()
+                .registerTypeAdapter(int.class, LENIENT_INT)
+                .registerTypeAdapter(Integer.class, LENIENT_INT)
+                .create():get().gsonLenient;
     }
 
     public static JsonElement parse(String json) {
@@ -178,4 +192,29 @@ public class Json {
             return false;
         }
     }
+
+    // 部分源把 total/page 等数值字段输出为空字符串，Gson 默认按 int 解析会抛
+    // NumberFormatException 导致整包 JSON 失败；int 字段遇空串/null/非数字一律按 0
+    private static final TypeAdapter<Number> LENIENT_INT = new TypeAdapter<Number>() {
+        @Override
+        public void write(JsonWriter out, Number value) throws IOException {
+            if (value == null) out.nullValue();
+            else out.value(value.intValue());
+        }
+
+        @Override
+        public Number read(JsonReader in) throws IOException {
+            if (in.peek() == JsonToken.NULL) {
+                in.nextNull();
+                return 0;
+            }
+            String s = in.nextString().trim();
+            if (s.isEmpty()) return 0;
+            try {
+                return (int) Double.parseDouble(s);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+    };
 }
