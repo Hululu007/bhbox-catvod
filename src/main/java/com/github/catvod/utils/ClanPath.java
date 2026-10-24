@@ -49,6 +49,13 @@ public final class ClanPath {
         return new File(toAbsPath(path));
     }
 
+    /** clan://localhost/x 或 file://x → 本地绝对路径；其余 no-op（写回本地源文件场景） */
+    public static String toLocalFilePath(String path) {
+        if (path == null) return null;
+        if (path.startsWith("clan://localhost/")) return toAbsPath("file://" + path.substring("clan://localhost/".length()));
+        return toAbsPath(path);
+    }
+
     public static boolean isClanPath(String path) {
         return path != null && path.startsWith(CLAN_PREFIX);
     }
