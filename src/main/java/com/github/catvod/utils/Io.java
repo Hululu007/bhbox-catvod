@@ -37,7 +37,7 @@ public class Io {
 
     public static String read(String path) {
         try {
-            return read(new FileInputStream(getLocal(path)));
+            return read(new FileInputStream(ClanPath.toAbsFile(path)));
         } catch (Exception e) {
             return "";
         }
@@ -203,12 +203,6 @@ public class Io {
 
     public static File getFile(String path){
         return mkdir(new File(path));
-    }
-
-    public static File getLocal(String path) {
-        File file1 = new File(path.replace("file:/", ""));
-        File file2 = new File(path.replace("file:/", Path.getSdRootPath()));
-        return file2.exists() ? file2 : file1.exists() ? file1 : new File(path);
     }
 
     public static boolean isSameFile(File file1, File file2) {

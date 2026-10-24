@@ -120,26 +120,10 @@ public class Util {
         }
         return "";
     }
+
+    /** @deprecated 请改用 {@link ClanPath#clanToAddress(String)}（bhbox-plugin 生态仍有引用，保留签名兼容） */
     public static String clanToAddress(String lanLink) {
-        if (lanLink.startsWith("clan")) {
-            if (lanLink.startsWith("clan://localhost/")) {
-                return lanLink.replace("clan://localhost/", Init.getServerAddress(true) + "file/");
-            } else {
-                String link = lanLink.substring(7);
-                int end = link.indexOf('/');
-                return "http://" + link.substring(0, end) + "/file/" + link.substring(end + 1);
-            }
-        }else if(lanLink.startsWith("http://") && lanLink.contains("127.0.0.1")){
-            // 本机地址：指向自家 server 的 /file/ 文件地址（历史配置可能固化任意端口和目录段），一律重写到当前端口
-            if (lanLink.contains("/file/")) {
-                return lanLink.replaceFirst("http://127\\.0\\.0\\.1:\\d+/", Init.getServerAddress(true));
-            }
-            return lanLink.replaceAll("9978", Init.getServerPort()+"");
-        }else if(lanLink.startsWith("file://")){
-            return lanLink.replace("file://", Init.getServerAddress(true)+"file/");
-        }else{
-            return lanLink;
-        }
+        return ClanPath.clanToAddress(lanLink);
     }
 
     public static long getNetSpeed(Context context) {
