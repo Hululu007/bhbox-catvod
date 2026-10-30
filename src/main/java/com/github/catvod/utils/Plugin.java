@@ -42,4 +42,12 @@ public class Plugin {
     public static List<ApkParam> getPluginParams(String id){
         return getManager().getPluginParams(id);
     }
+
+    public static byte[] readPluginAsset(String id, String path){
+        return getManager().readPluginAsset(id, path);
+    }
+    
+    public static String readPluginAssetString(String id, String path){
+        return getManager().readPluginAssetString(id, path);
+    }
 }

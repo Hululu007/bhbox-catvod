@@ -15,4 +15,10 @@ public interface IManager {
 
     List<ApkParam> getPluginParams(String id);
 
+    /** 读取插件 APK 内 assets 文件（按插件 id 定位 APK；APK 不存在或读取失败返回 null） */
+    byte[] readPluginAsset(String id, String path);
+
+    /** readPluginAsset 的 UTF-8 字符串封装 */
+    String readPluginAssetString(String id, String path);
+
 }
