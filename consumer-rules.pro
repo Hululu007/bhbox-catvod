@@ -54,15 +54,17 @@
 -keep class com.github.catvod.plugin.player.TrackInfo$TrackInfoBean { *; }
 
 # ==================== 工具类 ====================
--keep class com.github.catvod.utils.LOG { *; }
--keep class com.github.catvod.utils.Path { *; }
--keep class com.github.catvod.utils.Io { *; }
 -keep class com.github.catvod.utils.Asset { *; }
 -keep class com.github.catvod.utils.Cache { *; }
+-keep class com.github.catvod.utils.ClanPath { *; }
+-keep class com.github.catvod.utils.Io { *; }
+-keep class com.github.catvod.utils.Json { *; }
+-keep class com.github.catvod.utils.LOG { *; }
+-keep class com.github.catvod.utils.Path { *; }
+-keep class com.github.catvod.utils.Plugin { *; }
 -keep class com.github.catvod.utils.Shell { *; }
 -keep class com.github.catvod.utils.UriUtil { *; }
 -keep class com.github.catvod.utils.Util { *; }
--keep class com.github.catvod.utils.Json { *; }
 
 # ==================== 传递依赖（api 声明的库） ====================
 # 插件通过 DexClassLoader 加载，共享宿主 App 的 ClassLoader。

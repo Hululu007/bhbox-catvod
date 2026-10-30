@@ -23,6 +23,7 @@ public class ApkPluginBean  extends PluginBean {
     private String downloadUrl;     // 远程下载 URL（空则不支持免安装下载）
     private List<String> depends;   // 依赖的插件 id 列表（安装时校验），对应 plugin.json 的 "depends" 字段
     private List<ApkParam> params;
+    private Boolean showParam;      // 是否显示"配置"按钮；null（未配置）时按 params 是否声明判断
 
     public ApkPluginBean() {
         super();
@@ -142,6 +143,14 @@ public class ApkPluginBean  extends PluginBean {
 
     public void setParams(List<ApkParam> params) {
         this.params = params;
+    }
+
+    public Boolean getShowParam() {
+        return showParam;
+    }
+
+    public void setShowParam(Boolean showParam) {
+        this.showParam = showParam;
     }
 
 }

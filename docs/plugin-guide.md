@@ -110,6 +110,7 @@ dependencies {
 | `minSdk`        | int     | 否         | 最低 Android API 级别（多数插件要求 21 或 23）       |
 | `minAppVersion` | int     | 否         | 最低宿主 APP 版本号。宿主统一兼容性判断（`PluginManager.isCompatible`）：`设备 SDK >= minSdk && 宿主 versionCode >= minAppVersion`，不兼容的插件在任何入口（在线安装/离线安装/启动恢复加载）都不会被加载 |
 | `autoRun`       | boolean | 否         | 是否开机自动启动（默认 false），player 类型通常设为 true   |
+| `showParam`     | boolean | 否         | 是否在插件管理界面显示"配置"按钮。缺省时按 `params` 是否声明自动判断（有声明即显示）；显式设为 `false` 隐藏配置入口（参数改由其它途径配置，如插件自身 Web 页面）；显式设为 `true` 强制显示（即使未声明 `params`，运行期持久化的参数也可在配置弹窗编辑） |
 | `downloadUrl`   | string  | 否         | 远程下载 APK 地址，留空则不支持在线下载安装                |
 | `spider`        | string  | Spider 专用 | 爬虫语言类型：`"py"`（Python）、`"php"`（PHP）、`"cat"`（Node.js T3 源） |
 | `depends`       | array   | 否         | 依赖的 Runtime 插件 id 列表（如 `["bh.box.plugin.node"]`），宿主安装时校验并加载依赖 |
@@ -120,6 +121,8 @@ dependencies {
 ## 参数配置（params）
 
 参数用于在插件管理界面生成配置表单，用户填写的值会持久化存储，插件运行时读取。
+
+> "配置"按钮的显隐由 plugin.json 的 `showParam` 控制（缺省时声明了 `params` 即显示）。参数也可不经 plugin.json 声明而由插件运行期写入（如 Service 插件的 Web 页面保存），此时显式 `"showParam": true` 可让配置按钮保持可用，用户在配置弹窗中编辑的正是运行期持久化的参数值；反之参数全部走插件自身 Web 页面配置时，可设 `"showParam": false` 隐藏宿主侧配置入口。
 
 ### 参数类型
 
