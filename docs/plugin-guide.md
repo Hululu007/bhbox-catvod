@@ -263,6 +263,8 @@ public interface IServicePlugin extends IPlugin {
 }
 ```
 
+> `getPort() > 0` 的 Web 页面运行在宿主内嵌 WebView 中，页面可用的文件选择增强见[宿主 WebView 能力](#宿主-webview-能力service-插件-web-页面)。
+
 ### Spider 插件
 
 ```java
@@ -439,6 +441,30 @@ IRuntimePlugin runtime = Plugin.getRuntimePluginById("bh.box.plugin.node");
 
 > 建议在 `start()` 方法开头调用 `loadApkParams()`，确保每次启动使用最新配置。
 > `PlayerFactory.create()` 中同样需要读取参数，应在创建 Player 实例前解析。
+
+***
+
+## 宿主 WebView 能力（Service 插件 Web 页面）
+
+Service 插件 `getPort()` 返回 >0 时，宿主在插件管理界面提供"打开网页"入口，用内嵌 WebView 打开状态页。页面里的文件选择由宿主增强（旧宿主无此能力，页面按特性检测编写即可两端兼容）：
+
+- **标准 `<input type=file>`**：点击后宿主弹出原生文件选择器（真实文件系统浏览，自动处理存储权限与目录记忆）。页面拿到标准 `File` 对象（可 FileReader 读取内容），但按浏览器安全规则**只有文件名、没有设备路径**。
+- **`window.showOpenFilePicker()` 仿写**：Android WebView 无 File System Access API，宿主注入了仿写实现，页面按标准 API 调用即可。`getFile()` 结果附带 `__path` 属性（sdcard 相对路径，如 `Download/bookSource.json`），可拼出 `file://` 地址行让插件加载本地文件；桌面 Chrome 等有原生实现的环境不受影响（无 `__path`，退回文件名）。
+
+参考写法（注意不要用 async/await——老 WebView 解析不了会毁掉整段脚本）：
+
+```js
+function pickFile(){
+  if(typeof window.showOpenFilePicker!=='function'){document.getElementById('fpick').click();return}
+  Promise.resolve(window.showOpenFilePicker()).then(function(hs){return hs[0].getFile()})
+    .then(function(f){
+      var line='file://'+(f.__path||f.name);  // __path：宿主仿写提供的 sdcard 相对路径
+      // 插入配置表单 / 保存参数
+    });
+}
+```
+
+> 两类调用最终都落到宿主原生选择器；页面按特性检测编写，即可在宿主 WebView 与外部浏览器中都正常工作。
 
 ***
 
