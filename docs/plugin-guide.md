@@ -323,7 +323,7 @@ public interface IRuntimePlugin extends IPlugin {
 }
 ```
 
-> Runtime 插件为其它插件提供可执行文件（一个插件只提供一个，须位于插件 assets 解压目录内）。依赖方在 plugin.json 中通过 `depends` 声明，代码中经 `Plugin.getRuntimePluginById(id)` 获取运行时（见[运行时读取配置](#运行时读取配置)）。现有 Runtime 插件：`node-plugin`（Node.js 运行时）、`php-plugin`（PHP 运行时）。
+> Runtime 插件为其它插件提供可执行文件（一个插件只提供一个，须位于插件 assets 解压目录内）。依赖方在 plugin.json 中通过 `depends` 声明，代码中经 `Plugin.getRuntimePluginById(id)` 获取运行时（见[运行时读写配置](#运行时读写配置)）。现有 Runtime 插件：`node-plugin`（Node.js 运行时）、`php-plugin`（PHP 运行时）。
 
 `PlayerFactory` 接口：
 
@@ -400,9 +400,9 @@ public interface PlayerFactory<P extends Player> {
 
 ***
 
-## 运行时读取配置
+## 运行时读写配置
 
-插件通过 catvod 桥接类 `com.github.catvod.utils.Plugin` 读取用户配置的参数值（宿主 `PluginManager` 实现 `IManager` 并注册，插件跨 dex 调用桥接方法；`depends` 依赖的 Runtime 插件也经它获取）：
+插件通过 catvod 桥接类 `com.github.catvod.utils.Plugin` 读写用户配置的参数值（宿主 `PluginManager` 实现 `IManager` 并注册，插件跨 dex 调用桥接方法；`depends` 依赖的 Runtime 插件也经它获取）：
 
 ```java
 import com.github.catvod.utils.Plugin;
@@ -442,6 +442,29 @@ IRuntimePlugin runtime = Plugin.getRuntimePluginById("bh.box.plugin.node");
 > 建议在 `start()` 方法开头调用 `loadApkParams()`，确保每次启动使用最新配置。
 > `PlayerFactory.create()` 中同样需要读取参数，应在创建 Player 实例前解析。
 
+### 运行期写入参数（插件 Web 页面保存）
+
+Service 插件可在自身 Web 页面中修改参数并持久化。保存经宿主统一落 PluginCache（插件配置弹窗、下次 `start()` 读到的都是新值）：
+
+```java
+private static final String ID = "bh.box.plugin.myplugin";
+
+public void saveParamValue(String id, String value) {
+    List<ApkParam> saved = Plugin.getPluginParams(ID);
+    // 宿主无参数时返回不可变空表、有参数时返回 bean 内部列表，均先拷贝再改
+    List<ApkParam> params = new ArrayList<>();
+    if (saved != null) params.addAll(saved);
+    for (ApkParam p : params) {
+        if (id.equals(p.getId())) { p.setValue(value); break; }
+    }
+    Plugin.savePluginParams(ID, params);
+}
+```
+
+> - 需宿主 `PluginManager` 实现 `IManager.savePluginParams/getPluginParams`（catvod 1.0.4+）；旧宿主上调用会抛 `NoSuchMethodError`，应在 plugin.json 的 `minAppVersion` 中声明相应最低版本。
+> - 保存后建议回读校验已落盘（宿主可能因插件未注册等静默跳过），未生效时应向页面返回明确失败，避免用户误以为保存成功。
+> - 参数全部走插件自身 Web 页面配置时，可设 `"showParam": false` 隐藏宿主侧配置入口（见[参数配置](#参数配置params)）。
+
 ***
 
 ## 宿主 WebView 能力（Service 插件 Web 页面）
@@ -449,7 +472,7 @@ IRuntimePlugin runtime = Plugin.getRuntimePluginById("bh.box.plugin.node");
 Service 插件 `getPort()` 返回 >0 时，宿主在插件管理界面提供"打开网页"入口，用内嵌 WebView 打开状态页。页面里的文件选择由宿主增强（旧宿主无此能力，页面按特性检测编写即可两端兼容）：
 
 - **标准 `<input type=file>`**：点击后宿主弹出原生文件选择器（真实文件系统浏览，自动处理存储权限与目录记忆）。页面拿到标准 `File` 对象（可 FileReader 读取内容），但按浏览器安全规则**只有文件名、没有设备路径**。
-- **`window.showOpenFilePicker()` 仿写**：Android WebView 无 File System Access API，宿主注入了仿写实现，页面按标准 API 调用即可。`getFile()` 结果附带 `__path` 属性（sdcard 相对路径，如 `Download/bookSource.json`），可拼出 `file://` 地址行让插件加载本地文件；桌面 Chrome 等有原生实现的环境不受影响（无 `__path`，退回文件名）。
+- **`window.showOpenFilePicker()` 仿写**：新版 Android WebView 已原生实现该 API 但拿不到真实路径，宿主注入的仿写实现会**覆盖原生实现**（旧版 WebView 无此 API，注入即新增），页面一律按标准 API 调用即可。`getFile()` 结果附带 `__path` 属性（sdcard 相对路径，如 `Download/bookSource.json`），可拼出 `file://` 地址行让插件加载本地文件；桌面 Chrome 等有原生实现的环境不受影响（无 `__path`，退回文件名）。
 
 参考写法（注意不要用 async/await——老 WebView 解析不了会毁掉整段脚本）：
 
